@@ -1,1 +1,1 @@
-# J.S.-Todo-List
+# I practice writing an application in Javascript
