@@ -8,7 +8,6 @@
     <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="style.css">
-    <script src="indes.js"></script>
 
 </head>
 <body>
@@ -16,11 +15,11 @@
         <div>
             <header class="header">
                 <h1>todos</h1>
-                <input class="new-todo" placeholder="What needs to be done?" value="">
+                <input class="new-todo" id="new-todo" placeholder="What needs to be done?" value="">
             </header>
             <section class="main">
                 <input class="toggle-all" type="checkbox">
-                <ul class="todo-list"></ul>
+                <ul class="todo-list" id="todo-list"></ul>
             </section>
             <footer class="footer">
                 <span class="todo-count"></span>
@@ -35,5 +34,6 @@
             </footer>
         </div>
     </section>
+    <script src="indes.js"></script>
 </body>
 </html>
