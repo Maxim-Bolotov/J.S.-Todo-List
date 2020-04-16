@@ -42,9 +42,9 @@ class Model {
    // Изменяет completed задачи по id
    toggleTodo(id) {
       this.myTasks = this.myTasks.map(todo =>
-         todo.id === id ? { id: todo.id, value: todo.value, complete: !todo.complete } : todo
+         todo.id === id ? { id: todo.id, value: todo.value, completed: !todo.completed } : todo
       )
-
+      
       this._commit(this.myTasks)
    }
 
@@ -55,10 +55,13 @@ class Model {
       this._commit(this.myTasks)
    }
 
+   
 }
 
-class View {
+class View extends Model {
    constructor() {
+      super()
+      console.log(this.myTasks);
       // Доступ к секции
       this.todoApp = this.getElement('section');
       // Форма
@@ -95,9 +98,11 @@ class View {
 
       this.footer.append(this.span, this.filtres);
 
+      this.footer.style.display = this.myTasks.length ? 'block' : 'none';
+
       this.main.append(this.checkBox, this.todoList);
-      this.form.append(this.header, this.main, this.footer);
-      this.todoApp.append(this.form);
+      this.form.append(this.header);
+      this.todoApp.append(this.form, this.main, this.footer);
    }
 
    // Возврат текста
@@ -124,8 +129,6 @@ class View {
       return element;
    }
 
-   
-
    // Отображение задач
    displayTodos(myTasks) {
       // Удалить все узлы
@@ -140,8 +143,8 @@ class View {
          listItem.id = todo.id;
          // div
          let vievDiv = document.createElement("div")
-         // input checkbox
-         let checkBox = document.createElement("input");
+         // input toggleBox
+         let toggleBox = document.createElement("input");
          // label
          let label = document.createElement("label");
          // button.delete
@@ -150,22 +153,29 @@ class View {
          let editInput = document.createElement("input");
          //Добавляю классы элементам 
          vievDiv.className = "viev";
-         checkBox.className = "toggle";
-         // checkbox.checked = todo.completed
+         vievDiv.id = listItem.id
+         toggleBox.className = "toggle";
+
+         // toggleBox.checked = todo.completed
          destroyButton.className = "destroy";
          editInput.classList.add('edit')
 
-         checkBox.type = "checkBox";
+         toggleBox.type = "checkBox";
          // Текст 
          label.textContent = todo.value;
          editInput.textContent = todo.value;
          // Создаю узлы в дочерних элементах
-         vievDiv.append(checkBox, label, destroyButton);
+         vievDiv.append(toggleBox, label, destroyButton);
          listItem.append(vievDiv, editInput);
 
          this.todoList.append(listItem);
+
+         if (todo.completed) {
+            listItem.className = 'completed'
+         }
+         
       });
-      // }
+
    }
    // Добавить задачу
    bindAddTodo(handler) {
@@ -177,9 +187,27 @@ class View {
          }
       })
    }
+   // Удалить задачу
+   bindDeleteTodo(handler) {
+      this.todoList.addEventListener('click', event => {
+         if (event.target.className === 'destroy') {
+            const id = parseInt(event.target.parentElement.id)
+            
+            handler(id)
+         }
+      })
+   }
+   // checkbox
+   bindToggleTodo(handler) {
+      this.todoList.addEventListener('change', event => {
+         if (event.target.type === 'checkbox') {
+            const id = parseInt(event.target.parentElement.id);
+
+            handler(id);
+         }
+      })
+   }
 }
-
-
 
 
 //Соединяет Model и View
@@ -191,49 +219,28 @@ class Controller {
       // Явная привязка
       this.model.bindTodoListChanged(this.onTodoListChanged);
       this.view.bindAddTodo(this.handleAddTodo);
+      this.view.bindDeleteTodo(this.handleDeleteTodo);
+      this.view.bindToggleTodo(this.handleToggleTodo)
       // // Показать начальные задачи
       this.onTodoListChanged(this.model.myTasks);
    }
-
+   
    onTodoListChanged = myTasks => {
       this.view.displayTodos(myTasks)
    }
+
    // Обработчик событий (Добавить задачу)
    handleAddTodo = todoValue => {
       this.model.addTodo(todoValue)
-   }    
+   }   
+
+   handleDeleteTodo = id => {
+      this.model.deleteTodo(id)
+   }
+
+   handleToggleTodo = id => {
+      this.model.toggleTodo(id)
+   }
 }
 
-
-
 const app = new Controller(new Model(), new View());
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
