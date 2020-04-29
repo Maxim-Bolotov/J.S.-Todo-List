@@ -26,7 +26,6 @@ class Model {
          completed: false,
       }
       this.myTasks.push(todo);
-
       this._commit(this.myTasks)
    }
 
@@ -48,6 +47,17 @@ class Model {
       this._commit(this.myTasks)
    }
 
+   // Изменение всех задач
+   changeAllTasks(completed) {
+      this.myTasks = this.myTasks.map((todo) => {
+         return this.myTasks.every(todo => todo.completed === true) === completed ? 
+            { id: todo.id, value: todo.value, completed: true } : 
+            { id: todo.id, value: todo.value, completed: false }
+      })
+
+      this._commit(this.myTasks)
+   }
+
    // Фильтрует задачу из массива по id
    deleteTodo(id) {
       this.myTasks = this.myTasks.filter(todo => todo.id !== id);
@@ -61,7 +71,6 @@ class Model {
 class View extends Model {
    constructor() {
       super()
-      console.log(this.myTasks);
       // Доступ к секции
       this.todoApp = this.getElement('section');
       // Форма
@@ -85,7 +94,6 @@ class View extends Model {
       this.footer = this.createElement('footer', 'footer');
       // Число задач
       this.strong = this.createElement('strong');
-      this.strong.textContent = '1';
 
       this.span = this.createElement('span', 'todo-count');
       this.spanI = this.createElement('span');
@@ -93,12 +101,20 @@ class View extends Model {
       this.spanL = this.createElement('span');
       this.spanL.textContent = ' left';
       this.span.append(this.strong, this.spanI, this.spanL);
+
       // Фильтры для задач
-      this.filtres = this.createElement('ul', 'filtres');
+      this.todoFilter = this.createElement('ul', 'filtersBtn');
+      this.allTasksButton = this.createElement('button', 'all');
+      this.allTasksButton.textContent = 'All';
+      this.activeTasksButton = this.createElement('button', 'activeBtn');
+      this.activeTasksButton.textContent = 'Active';
+      this.completedTasksButton = this.createElement('button', 'completedBtn');
+      this.completedTasksButton.textContent = 'Completed';
+      this.completedTasksButton.type = 'checkbox'
+      this.todoFilter.append(this.allTasksButton, this.activeTasksButton, this.completedTasksButton);
 
-      this.footer.append(this.span, this.filtres);
-
-      this.footer.style.display = this.myTasks.length ? 'block' : 'none';
+      this.footer.append(this.span, this.todoFilter);
+      this.footer.style.display = 'none';
 
       this.main.append(this.checkBox, this.todoList);
       this.form.append(this.header);
@@ -134,12 +150,17 @@ class View extends Model {
 
    // Отображение задач
    displayTodos(myTasks) {
+
       // Удалить все узлы
       while (this.todoList.firstChild) {
          this.todoList.removeChild(this.todoList.firstChild)
       }
    
       myTasks.forEach(todo => {
+
+         //footer display
+         this.footer.style.display = 'block'
+         this.strong.textContent = `${myTasks.length}`;
 
          // Cоздать элемент списка
          let listItem = document.createElement("li");
@@ -170,9 +191,18 @@ class View extends Model {
          if (todo.completed) {
             listItem.className = 'completed'
          }
-         
+     
       });
 
+      //footer display
+      this.displayFooter(myTasks)
+
+   }
+
+   displayFooter(myTasks){
+      if (myTasks.length < 1) {
+         this.footer.style.display = 'none'
+      }
    }
 
    // Обновить временное состояние
@@ -183,8 +213,8 @@ class View extends Model {
          }
       })
    }
-   
-   // Добавить задачу
+
+   // Add
    bindAddTodo(handler) {
       this.form.addEventListener('submit', event => {
          event.preventDefault()
@@ -194,7 +224,7 @@ class View extends Model {
          }
       })
    }
-   // Удалить задачу
+   // Delete
    bindDeleteTodo(handler) {
       this.todoList.addEventListener('click', event => {
          if (event.target.className === 'destroy') {
@@ -204,13 +234,23 @@ class View extends Model {
          }
       })
    }
-   // checkbox
+   // Toogle
    bindToggleTodo(handler) {
       this.todoList.addEventListener('change', event => {
          if (event.target.type === 'checkbox') {
             const id = parseInt(event.target.parentElement.id);
 
             handler(id);
+         }
+      })
+   }
+   // toogle all
+   bindChangeAllTasks(handler) {
+      this.todoApp.addEventListener('click', event => {
+         if(event.target.className === 'toggle-all'){
+            const completed = false;
+
+            handler(completed)
          }
       })
    }
@@ -227,6 +267,7 @@ class View extends Model {
          }
       })
    }
+
 }
 
 //Соединяет Model и View
@@ -239,7 +280,8 @@ class Controller {
       this.model.bindTodoListChanged(this.onTodoListChanged);
       this.view.bindAddTodo(this.handleAddTodo);
       this.view.bindDeleteTodo(this.handleDeleteTodo);
-      this.view.bindToggleTodo(this.handleToggleTodo)
+      this.view.bindToggleTodo(this.handleToggleTodo);
+      this.view.bindChangeAllTasks(this.handleChangeAllTasks)
       this.view.bindEditTodo(this.handleEditTodo);
       // Показать начальные задачи
       this.onTodoListChanged(this.model.myTasks);
@@ -249,19 +291,23 @@ class Controller {
    onTodoListChanged = myTasks => {
       this.view.displayTodos(myTasks)
    }
-
+   // Add
    handleAddTodo = todoValue => {
       this.model.addTodo(todoValue)
    }   
-
+   // Delete
    handleDeleteTodo = id => {
       this.model.deleteTodo(id)
    }
-
+   // Toogle 
    handleToggleTodo = id => {
       this.model.toggleTodo(id)
    }
-
+   // Toogle all 
+   handleChangeAllTasks = completed => {
+      this.model.changeAllTasks(completed)
+   }
+   // Edit
    handleEditTodo = (id, todoText) => {
       this.model.editTodo(id, todoText)
    }
