@@ -17,6 +17,10 @@ class Model {
       localStorage.setItem('myTasks', JSON.stringify(myTasks));
    }
 
+   _filterTodo(filter) {
+      this.onTodoListChanged(filter);
+      localStorage.setItem('filter', JSON.stringify(filter));
+   }
    // Добавляет новый todo к массиву
    addTodo(todoValue) {
       // Задача
@@ -26,7 +30,8 @@ class Model {
          completed: false,
       }
       this.myTasks.push(todo);
-      this._commit(this.myTasks)
+      this._commit(this.myTasks);
+
    }
 
    // Изменяет value задачи по id
@@ -58,14 +63,38 @@ class Model {
       this._commit(this.myTasks)
    }
 
-   // Фильтрует задачу из массива по id
+   // Удаляет задачу из массива по id
    deleteTodo(id) {
       this.myTasks = this.myTasks.filter(todo => todo.id !== id);
 
       this._commit(this.myTasks)
    }
 
-   
+   allTodo(){
+      this.myTasks;
+      this._commit(this.myTasks);
+   }
+
+   // Показывает активные задачи
+   activeTodo(completed) {
+      this.activeTasks = this.myTasks.filter(todo => todo.completed === completed)
+
+      this._filterTodo(this.activeTasks)
+   }
+
+   // Показывает выполненные задачи
+   completedTodo(completed) {
+      this.completedTasks = this.myTasks.filter(todo => todo.completed === completed)
+
+      this._filterTodo(this.completedTasks)
+   }
+
+   // Удаляет выполненные задачи
+   clearCompletedTodo(completed) {
+      this.myTasks = this.myTasks.filter(todo => todo.completed !== completed);
+
+      this._commit(this.myTasks)
+   }
 }
 
 class View extends Model {
@@ -103,17 +132,29 @@ class View extends Model {
       this.span.append(this.strong, this.spanI, this.spanL);
 
       // Фильтры для задач
-      this.todoFilter = this.createElement('ul', 'filtersBtn');
-      this.allTasksButton = this.createElement('button', 'all');
-      this.allTasksButton.textContent = 'All';
-      this.activeTasksButton = this.createElement('button', 'activeBtn');
-      this.activeTasksButton.textContent = 'Active';
-      this.completedTasksButton = this.createElement('button', 'completedBtn');
-      this.completedTasksButton.textContent = 'Completed';
-      this.completedTasksButton.type = 'checkbox'
-      this.todoFilter.append(this.allTasksButton, this.activeTasksButton, this.completedTasksButton);
+      this.todoFilter = this.createElement('ul', 'filters');   
+      // All
+      this.allTasksListItem = this.createElement('li');
+      this.allTask = this.createElement('button','all');
+      this.allTask.textContent = 'All'
+      this.allTasksListItem.append(this.allTask);
+      // Active
+      this.activeTasksListItem = this.createElement('li');
+      this.activeTask = this.createElement('button', 'active');
+      this.activeTask.textContent = 'Active'
+      this.activeTasksListItem.append(this.activeTask);
+      // Completed
+      this.completedTasksListItem = this.createElement('li');
+      this.completedTask = this.createElement('button', 'completed');
+      this.completedTask.textContent = 'Completed'
+      this.completedTasksListItem.append(this.completedTask);
 
-      this.footer.append(this.span, this.todoFilter);
+      this.todoFilter.append(this.allTasksListItem, this.activeTasksListItem, this.completedTasksListItem);
+      // Clear completed
+      this.clearCompletedTasksBtn = this.createElement('button', 'clear-completed');
+      this.clearCompletedTasksBtn.textContent = 'Clear completed';
+
+      this.footer.append(this.span, this.todoFilter, this.clearCompletedTasksBtn);
       this.footer.style.display = 'none';
 
       this.main.append(this.checkBox, this.todoList);
@@ -160,7 +201,7 @@ class View extends Model {
 
          //footer display
          this.footer.style.display = 'block'
-         this.strong.textContent = `${myTasks.length}`;
+         this.strong.textContent = `${myTasks.filter(todo => todo.completed === false).length}`;
 
          // Cоздать элемент списка
          let listItem = document.createElement("li");
@@ -213,7 +254,6 @@ class View extends Model {
          }
       })
    }
-
    // Add
    bindAddTodo(handler) {
       this.form.addEventListener('submit', event => {
@@ -248,13 +288,11 @@ class View extends Model {
    bindChangeAllTasks(handler) {
       this.todoApp.addEventListener('click', event => {
          if(event.target.className === 'toggle-all'){
-            const completed = false;
 
-            handler(completed)
+            handler(false)
          }
       })
    }
-
    // edit
    bindEditTodo(handler) {
       this.todoList.addEventListener('keydown', event => {
@@ -267,7 +305,42 @@ class View extends Model {
          }
       })
    }
+   // All
+   bindAllTodo(handler) {
+      this.footer.addEventListener('click', event => {
+         if(event.target.className === 'all'){
+            handler()
+         }
+      })
+   }
+   // Active
+   bindActiveTodo(handler) {
+      this.footer.addEventListener('click', event => {
+         if(event.target.className === 'active'){
 
+            handler(false)
+         }
+      })
+      this.displayFooter(this.myTasks)
+   }
+   // Completed
+   bindCompletedTodo(handler) {
+      this.footer.addEventListener('click', event => {
+         if(event.target.className === 'completed'){
+
+            handler(true)
+         }
+      })
+   }
+   // Clear all completed
+   clearCompletedTodo(handler) {
+      this.footer.addEventListener('click', event => {
+         if(event.target.className === 'clear-completed'){
+
+            handler(true)
+         }
+      })
+   }
 }
 
 //Соединяет Model и View
@@ -283,6 +356,11 @@ class Controller {
       this.view.bindToggleTodo(this.handleToggleTodo);
       this.view.bindChangeAllTasks(this.handleChangeAllTasks)
       this.view.bindEditTodo(this.handleEditTodo);
+      //
+      this.view.bindAllTodo(this.handleAllTodo);
+      this.view.bindActiveTodo(this.handleActiveTodo);
+      this.view.bindCompletedTodo(this.handleCompletedTodo);
+      this.view.clearCompletedTodo(this.handleClearAllCompleted);
       // Показать начальные задачи
       this.onTodoListChanged(this.model.myTasks);
    }
@@ -310,6 +388,22 @@ class Controller {
    // Edit
    handleEditTodo = (id, todoText) => {
       this.model.editTodo(id, todoText)
+   }
+   // All
+   handleAllTodo = () => {
+      this.model.allTodo()
+   }
+   // Active
+   handleActiveTodo = (completed) => {
+      this.model.activeTodo(completed)
+   }
+   // Completed
+   handleCompletedTodo = (completed) => {
+      this.model.completedTodo(completed)
+   }
+   // Clear all completed
+   handleClearAllCompleted = (completed) => {
+      this.model.clearCompletedTodo(completed)
    }
 }
 
